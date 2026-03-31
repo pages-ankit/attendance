@@ -113,6 +113,33 @@
             border: none; border-radius: 7px; cursor: pointer; font-weight: 600; margin-top: 16px;
         }
         .hidden { display: none !important; }
+
+        /* ── Loading Animation ── */
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            border-top-color: var(--blue);
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Optional: Pulse effect for the status message */
+        .loading-text {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
     </style>
 </head>
 <body>
@@ -166,24 +193,26 @@
     async function fetchStudents(batch) {
         if (!batch) return;
         const grid = document.getElementById('student-grid');
-        const msg = document.getElementById('status-msg');
         grid.innerHTML = "";
-        msg.innerText = "Loading student list...";
+        
+        updateStatus("Fetching student list...", true); // Show animation
 
         try {
             const res = await fetch(`${GAS_URL}?batch=${encodeURIComponent(batch)}`);
             const students = await res.json();
+            
             students.forEach(s => {
                 const name = typeof s === 'string' ? s : s.name;
                 const card = document.createElement('div');
                 card.className = 'student-card';
                 card.innerText = name;
-                // FIXED: Changed function call name to match definition
                 card.onclick = () => showHistory(batch, name);
                 grid.appendChild(card);
             });
-            msg.innerText = `${students.length} students found.`;
-        } catch (e) { msg.innerText = "Error loading students."; }
+            updateStatus(`${students.length} students found.`); // Hide animation
+        } catch (e) { 
+            updateStatus("Error loading students."); 
+        }
     }
 
     function filterGrid(query) {
@@ -195,18 +224,17 @@
 
     // FIXED: Function name and internal IDs to match HTML
     async function showHistory(batch, name) {
-        const msg = document.getElementById('status-msg');
         const content = document.getElementById('history-content');
-        
-        msg.innerText = `Loading records for ${name}...`;
         content.innerHTML = ""; 
+        
+        updateStatus(`Retrieving records for ${name}...`, true); // Show animation
 
         try {
             const res = await fetch(`${GAS_URL}?batch=${encodeURIComponent(batch)}&action=getStudentHistory&name=${encodeURIComponent(name)}`);
             const history = await res.json(); 
 
             if (!history || history.length === 0) {
-                msg.innerText = "No records found for this student.";
+                updateStatus("No records found.");
                 return;
             }
 
@@ -233,12 +261,22 @@
             
             content.innerHTML = htmlBuffer;
             document.getElementById('history-modal').classList.remove('hidden');
-            msg.innerText = "";
+            updateStatus(""); // Hide animation
 
         } catch (e) {
-            msg.innerText = "Error: Could not retrieve student history.";
+            updateStatus("Failed to retrieve records.");
         }
     }
+
+    function updateStatus(message, isLoading = false) {
+        const msgEl = document.getElementById('status-msg');
+        if (isLoading) {
+            msgEl.innerHTML = `<div class="spinner"></div><span class="loading-text">${message}</span>`;
+        } else {
+            msgEl.innerText = message;
+        }
+    }
+
 
     function closeModal() { document.getElementById('history-modal').classList.add('hidden'); }
 </script>
