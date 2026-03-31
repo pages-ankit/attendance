@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PAC Physics Attendance</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f5f4f0;
+            --surface: #ffffff;
+            --border: #dddbd4;
+            --text: #1a1a18;
+            --muted: #888880;
+            --accent: #1a1a18;
+            --present: #2d6a4f;
+            --present-bg: #d8f3dc;
+            --present-border: #74c69d;
+            --absent: #9b2335;
+            --absent-bg: #fde8ec;
+            --absent-border: #e07b8a;
+            --blue: #1a56db;
+            --blue-bg: #ebf2ff;
+            --warn: #92400e;
+            --warn-bg: #fef3c7;
+            --new-student: #5b21b6;
+            --new-student-bg: #ede9fe;
+            --new-student-border: #a78bfa;
+            --mentee: #0369a1;
+            --mentee-bg: #e0f2fe;
+            --mentee-border: #7dd3fc;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'IBM Plex Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 24px 16px;
+        }
+
+        .container { max-width: 620px; margin: auto; }
+        .hidden { display: none !important; }
+
+        /* ── Header ── */
+        .app-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+        .app-header .logo {
+            font-family: 'IBM Plex Mono', monospace;
+            font-weight: 600; font-size: 1.1em; letter-spacing: -0.5px;
+            background: var(--accent); color: white;
+            padding: 6px 10px; border-radius: 6px;
+        }
+        .app-header .title { font-size: 1em; font-weight: 500; color: var(--muted); letter-spacing: 0.02em; }
+
+        /* ── Landing ── */
+        .landing-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 14px; padding: 40px 28px; text-align: center;
+        }
+        .landing-card h2 { font-family: 'IBM Plex Mono', monospace; font-size: 1.5em; margin-bottom: 8px; }
+        .landing-card p { color: var(--muted); margin-bottom: 30px; font-size: 0.95em; }
+        .landing-btns { display: flex; flex-direction: column; gap: 12px; }
+        .menu-btn {
+            padding: 16px; font-size: 1em; font-weight: 600;
+            border: none; border-radius: 10px; cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s; letter-spacing: 0.02em;
+        }
+        .menu-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+        .btn-new { background: var(--accent); color: white; }
+        .btn-view { background: var(--surface); color: var(--accent); border: 1.5px solid var(--border); }
+
+        /* ── App Screen ── */
+        .back-btn {
+            background: none; border: none; color: var(--blue); cursor: pointer;
+            font-size: 0.9em; font-weight: 600; font-family: 'IBM Plex Sans', sans-serif;
+            display: flex; align-items: center; gap: 4px; margin-bottom: 16px; padding: 0;
+        }
+        .back-btn:hover { text-decoration: underline; }
+
+        .card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 10px; padding: 16px; margin-bottom: 14px;
+        }
+
+        .field-label {
+            font-size: 0.78em; font-weight: 600; color: var(--muted);
+            letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px;
+        }
+
+        select {
+            width: 100%; padding: 10px 12px;
+            border: 1.5px solid var(--border); border-radius: 7px;
+            font-family: 'IBM Plex Sans', sans-serif; font-size: 0.95em;
+            background: var(--bg); color: var(--text); cursor: pointer; appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 12px center;
+        }
+        select:focus { outline: none; border-color: var(--accent); }
+
+        /* ── Draft Banner ── */
+        .draft-banner {
+            background: var(--warn-bg); border: 1px solid #f6c95a;
+            border-radius: 8px; padding: 10px 14px; font-size: 0.88em; color: var(--warn);
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 10px; margin-bottom: 14px;
+        }
+        .draft-banner button {
+            background: none; border: 1px solid var(--warn); color: var(--warn);
+            border-radius: 5px; padding: 4px 10px; font-size: 0.85em; cursor: pointer;
+            font-family: 'IBM Plex Sans', sans-serif; font-weight: 600; white-space: nowrap;
+        }
+
+        /* ── Toolbar ── */
+        .toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
+        .tool-btn {
+            flex: 1; min-width: 100px; padding: 9px 12px; font-size: 0.85em; font-weight: 600;
+            font-family: 'IBM Plex Sans', sans-serif; border-radius: 7px;
+            border: 1.5px solid var(--border); background: var(--bg);
+            cursor: pointer; transition: 0.15s; letter-spacing: 0.01em;
+        }
+        .tool-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
+        .tool-btn.present-tool { border-color: var(--present-border); color: var(--present); background: var(--present-bg); }
+        .tool-btn.present-tool:hover { background: var(--present); color: white; border-color: var(--present); }
+        .tool-btn.absent-tool { border-color: var(--absent-border); color: var(--absent); background: var(--absent-bg); }
+        .tool-btn.absent-tool:hover { background: var(--absent); color: white; border-color: var(--absent); }
+
+        /* ── Filter Toggle ── */
+        .filter-toggle {
+            display: flex; gap: 0; border: 1.5px solid var(--border); border-radius: 8px;
+            overflow: hidden; width: 100%; margin-bottom: 0;
+        }
+        .filter-toggle button {
+            flex: 1; padding: 9px 12px; font-size: 0.85em; font-weight: 600;
+            font-family: 'IBM Plex Sans', sans-serif; border: none;
+            background: var(--bg); color: var(--muted); cursor: pointer;
+            transition: 0.15s; letter-spacing: 0.01em;
+        }
+        .filter-toggle button:not(:last-child) { border-right: 1.5px solid var(--border); }
+        .filter-toggle button.active {
+            background: var(--mentee-bg); color: var(--mentee);
+            border-color: var(--mentee-border);
+        }
+        .filter-toggle button.active.all-active {
+            background: var(--accent); color: white;
+        }
+
+        /* ── Add Student ── */
+        .add-student-row {
+            display: flex; gap: 8px; margin-top: 10px; align-items: center; flex-wrap: wrap;
+        }
+        .add-student-row input[type="text"] {
+            flex: 1; min-width: 140px; padding: 9px 12px;
+            border: 1.5px solid var(--new-student-border); border-radius: 7px;
+            font-family: 'IBM Plex Sans', sans-serif; font-size: 0.92em;
+            background: var(--new-student-bg); color: var(--text);
+        }
+        .add-student-row input[type="text"]:focus { outline: none; border-color: var(--new-student); }
+        .add-student-row input[type="text"]::placeholder { color: #a78bfa; }
+        .relation-select {
+            padding: 9px 28px 9px 10px; border: 1.5px solid var(--new-student-border);
+            border-radius: 7px; font-family: 'IBM Plex Sans', sans-serif; font-size: 0.88em;
+            background: var(--new-student-bg); color: var(--new-student);
+            cursor: pointer; appearance: none; font-weight: 600;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235b21b6' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 8px center;
+            width: auto; flex-shrink: 0;
+        }
+        .relation-select:focus { outline: none; border-color: var(--new-student); }
+        .add-student-row button {
+            padding: 9px 16px; border: none;
+            background: var(--new-student); color: white;
+            border-radius: 7px; font-weight: 600; font-size: 0.88em;
+            font-family: 'IBM Plex Sans', sans-serif;
+            cursor: pointer; white-space: nowrap; transition: 0.15s;
+        }
+        .add-student-row button:hover { background: #4c1d95; }
+        .add-student-row button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* ── Search ── */
+        .search-wrap { position: relative; }
+        .search-wrap input {
+            width: 100%; padding: 9px 12px 9px 34px;
+            border: 1.5px solid var(--border); border-radius: 7px;
+            font-family: 'IBM Plex Sans', sans-serif; font-size: 0.92em;
+            background: var(--bg); color: var(--text);
+        }
+        .search-wrap input:focus { outline: none; border-color: var(--accent); }
+        .search-icon {
+            position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+            color: var(--muted); font-size: 0.9em; pointer-events: none;
+        }
+
+        /* ── Stats ── */
+        .stats-bar { display: flex; gap: 8px; margin-bottom: 14px; }
+        .stat-chip {
+            flex: 1; padding: 10px 8px; border-radius: 8px;
+            text-align: center; font-size: 0.85em; font-weight: 600; border: 1.5px solid;
+        }
+        .stat-chip.total  { border-color: var(--border); background: var(--surface); color: var(--text); }
+        .stat-chip.present { border-color: var(--present-border); background: var(--present-bg); color: var(--present); }
+        .stat-chip.absent  { border-color: var(--absent-border); background: var(--absent-bg); color: var(--absent); }
+        .stat-chip .big { display: block; font-size: 1.5em; line-height: 1.2; }
+
+        /* ── Filter notice ── */
+        .filter-notice {
+            background: var(--mentee-bg); border: 1px solid var(--mentee-border);
+            border-radius: 8px; padding: 8px 14px; font-size: 0.84em; color: var(--mentee);
+            font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+        }
+
+        /* ── Grid ── */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+
+        .student-card {
+            padding: 13px 10px; background: var(--surface); border: 1.5px solid var(--border);
+            border-radius: 8px; text-align: center; cursor: pointer; user-select: none;
+            transition: transform 0.12s, box-shadow 0.12s;
+            font-size: 0.88em; font-weight: 500; line-height: 1.3;
+            animation: fadeIn 0.2s ease both;
+        }
+        .student-card:hover { transform: translateY(-2px); box-shadow: 0 3px 8px rgba(0,0,0,0.08); }
+        .student-card.present { background: var(--present-bg); border-color: var(--present-border); color: var(--present); }
+        .student-card.absent  { background: var(--absent-bg);  border-color: var(--absent-border);  color: var(--absent); }
+        .student-card.hidden-by-search { display: none; }
+        .student-card.hidden-by-filter { display: none; }
+
+        /* Mentee indicator dot on card */
+        .student-card.is-mentee::before {
+            content: '● MENTEE';
+            display: block;
+            font-size: 0.62em;
+            font-family: 'IBM Plex Mono', monospace;
+            letter-spacing: 0.08em;
+            color: var(--mentee);
+            margin-bottom: 4px;
+            opacity: 0.8;
+        }
+        .student-card.is-mentee.present::before { color: var(--present); opacity: 0.7; }
+        .student-card.is-mentee.absent::before  { color: var(--absent);  opacity: 0.7; }
+
+        /* NEW student cards */
+        .student-card.is-new {
+            border-color: var(--new-student-border);
+            box-shadow: 0 0 0 2px var(--new-student-bg);
+        }
+        .student-card.is-new::after {
+            content: 'NEW';
+            display: block;
+            font-size: 0.65em;
+            font-family: 'IBM Plex Mono', monospace;
+            letter-spacing: 0.1em;
+            color: var(--new-student);
+            margin-top: 4px;
+        }
+
+        .status-badge {
+            display: block; font-size: 0.75em; margin-top: 4px;
+            font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.05em;
+        }
+        .student-card.present .status-badge::before { content: '● P'; }
+        .student-card.absent  .status-badge::before { content: '● A'; color: var(--absent); }
+
+        /* ── Submit ── */
+        .submit-btn {
+            width: 100%; padding: 14px; background: var(--accent); color: white;
+            border: none; border-radius: 9px; font-size: 1em; font-weight: 600;
+            cursor: pointer; margin-top: 16px; font-family: 'IBM Plex Sans', sans-serif;
+            transition: 0.2s; letter-spacing: 0.02em;
+        }
+        .submit-btn:hover:not(:disabled) { background: #333; }
+        .submit-btn:disabled { opacity: 0.65; cursor: not-allowed; }
+        .submit-btn.success { background: var(--present); }
+
+        /* ── Confirm Modal ── */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 100; padding: 16px;
+        }
+        .modal-box {
+            background: var(--surface); border-radius: 14px; padding: 28px 24px;
+            max-width: 380px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+        }
+        .modal-box h3 { font-family: 'IBM Plex Mono', monospace; margin-bottom: 10px; font-size: 1.1em; }
+        .modal-box p { color: var(--muted); font-size: 0.93em; line-height: 1.5; margin-bottom: 6px; }
+        .modal-box .summary {
+            background: var(--bg); border-radius: 8px; padding: 12px 14px;
+            margin: 14px 0; font-size: 0.92em; line-height: 1.8;
+        }
+        .modal-box .summary span.p { color: var(--present); font-weight: 600; }
+        .modal-box .summary span.a { color: var(--absent); font-weight: 600; }
+        .modal-box .summary span.n { color: var(--new-student); font-weight: 600; }
+        .modal-box .summary span.mentee-scope { color: var(--mentee); font-weight: 600; }
+        .modal-actions { display: flex; gap: 10px; margin-top: 4px; }
+        .modal-actions button {
+            flex: 1; padding: 11px; border-radius: 8px; border: 1.5px solid var(--border);
+            font-family: 'IBM Plex Sans', sans-serif; font-size: 0.95em; font-weight: 600;
+            cursor: pointer; transition: 0.15s;
+        }
+        .btn-cancel { background: var(--bg); color: var(--muted); }
+        .btn-confirm { background: var(--accent); color: white; border-color: var(--accent); }
+        .btn-confirm:hover { background: #333; }
+
+        #status-msg { text-align: center; padding: 8px; color: var(--muted); font-size: 0.9em; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="app-header">
+        <div class="logo">PAC</div>
+        <div class="title">Physics Attendance System</div>
+    </div>
+
+    <!-- Landing -->
+    <div id="landing-screen" class="landing-card">
+        <h2>Attendance</h2>
+        <p>Mark today's class or review past records.</p>
+        <div class="landing-btns">
+            <button class="menu-btn btn-new" onclick="showMode('new')">+ Enter New Attendance</button>
+            <button class="menu-btn btn-view" onclick="showMode('view')">View Past Records</button>
+        </div>
+    </div>
+
+    <!-- App Screen -->
+    <div id="app-screen" class="hidden">
+        <button class="back-btn" onclick="goBack()">← Back to Menu</button>
+
+        <!-- Draft banner -->
+        <div id="draft-banner" class="draft-banner hidden">
+            <span>📋 Unsaved draft found for <strong id="draft-batch-name"></strong></span>
+            <button onclick="restoreDraft()">Restore Draft</button>
+        </div>
+
+        <!-- Batch Selector -->
+        <div class="card">
+            <div class="field-label">Batch</div>
+            <select id="batch-select" onchange="handleBatchChange(this.value)">
+                <option value="">— Select Batch —</option>
+            </select>
+        </div>
+
+        <!-- History controls (view mode) -->
+        <div id="history-controls" class="card hidden">
+            <div class="field-label">Date</div>
+            <select id="date-select">
+                <option value="">— Select Date —</option>
+            </select>
+            <button class="tool-btn" style="width:100%;margin-top:10px" onclick="loadHistory()">View Records</button>
+        </div>
+
+        <!-- Toolbar (new mode) -->
+        <div id="new-toolbar" class="card hidden">
+
+            <!-- Filter Toggle -->
+            <div style="margin-bottom:14px">
+                <div class="field-label" style="margin-bottom:6px">View</div>
+                <div class="filter-toggle">
+                    <button id="filter-all-btn" class="active all-active" onclick="setFilter('all')">All Students</button>
+                    <button id="filter-mentee-btn" onclick="setFilter('mentee')">Mentees Only</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom:12px">
+                <div class="field-label" style="margin-bottom:6px">Quick Mark</div>
+                <div class="toolbar">
+                    <button class="tool-btn present-tool" onclick="markAll(true)">✓ All Present</button>
+                    <button class="tool-btn absent-tool"  onclick="markAll(false)">✗ All Absent</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom:12px">
+                <div class="field-label" style="margin-bottom:6px">Search Student</div>
+                <div class="search-wrap">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="search-input" placeholder="Type name to filter…" oninput="filterStudents(this.value)">
+                </div>
+            </div>
+
+            <div id="add-student-section" class="hidden">
+                <div class="field-label" style="margin-bottom:6px">Add New Student</div>
+                <div class="add-student-row">
+                    <input type="text" id="new-student-name" placeholder="Enter full name…" onkeydown="if(event.key==='Enter') addNewStudent()">
+                    <select id="new-student-relation" class="relation-select">
+                        <option value="non-mentee">Non-Mentee</option>
+                        <option value="mentee">Mentee</option>
+                    </select>
+                    <button id="add-student-btn" onclick="addNewStudent()">+ Add</button>
+                </div>
+                <div id="add-student-msg" style="font-size:0.82em;margin-top:6px;min-height:18px;"></div>
+            </div>
+        </div>
+
+        <!-- Search in view mode -->
+        <div id="view-search" class="card hidden">
+            <div class="field-label" style="margin-bottom:6px">Search Student</div>
+            <div class="search-wrap">
+                <span class="search-icon">🔍</span>
+                <input type="text" placeholder="Type name to filter…" oninput="filterStudents(this.value)">
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div id="stats" class="stats-bar hidden">
+            <div class="stat-chip total"><span class="big" id="t-count">0</span>Total</div>
+            <div class="stat-chip present"><span class="big" id="p-count">0</span>Present</div>
+            <div class="stat-chip absent"><span class="big" id="a-count">0</span>Absent</div>
+        </div>
+
+        <!-- Filter notice -->
+        <div id="filter-notice" class="filter-notice hidden">
+            👤 Showing mentees only — Quick Mark applies to visible students only
+        </div>
+
+        <div id="status-msg"></div>
+        <div class="grid" id="student-grid"></div>
+
+        <button id="submit-btn" class="submit-btn hidden" onclick="openConfirmModal()">Submit Attendance</button>
+    </div>
+
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirm-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+        <h3>Confirm Submission</h3>
+        <p>You are submitting attendance for:</p>
+        <div class="summary">
+            <div><strong>Batch:</strong> <span id="m-batch">—</span></div>
+            <div><strong>Date:</strong> <span id="m-date">—</span></div>
+            <div id="m-scope-row" class="hidden"><strong>Scope:</strong> <span class="mentee-scope" id="m-scope">—</span></div>
+            <div><strong>Present:</strong> <span class="p" id="m-present">0</span></div>
+            <div><strong>Absent:</strong> <span class="a" id="m-absent">0</span></div>
+            <div id="m-new-row" class="hidden"><strong>New students:</strong> <span class="n" id="m-new">0</span> (will be permanently added)</div>
+        </div>
+        <p>Please verify before confirming.</p>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+            <button class="btn-confirm" onclick="confirmSubmit()">Yes, Submit</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const GAS_URL = "https://script.google.com/macros/s/AKfycby6eLwUsAecZI3u9agG798A8JfoiKM-nFffeJGAz7Xmgv9D0RWDTfLx8hx3R38-WRv-Xg/exec";
+    const DRAFT_KEY = "pac_attendance_draft";
+
+    let currentMode = "";
+    let currentBatch = "";
+    let attendance = {};
+    let relations = {};     // { studentName: "mentee" | "non-mentee" }
+    let newStudents = [];   // tracks names added this session
+    let activeFilter = "all"; // "all" | "mentee"
+
+    // ── Init ──
+    (async function init() {
+        try {
+            const res = await fetch(GAS_URL);
+            const batches = await res.json();
+            const select = document.getElementById('batch-select');
+            batches.forEach(b => { select.innerHTML += `<option value="${b}">${b}</option>`; });
+        } catch (e) {
+            document.getElementById('status-msg').innerText = "Failed to load batches.";
+        }
+        checkForDraft();
+    })();
+
+    // ── Draft ──
+    function checkForDraft() {
+        const draft = getSavedDraft();
+        if (draft && draft.batch && Object.keys(draft.attendance).length > 0) {
+            document.getElementById('draft-batch-name').innerText = draft.batch;
+            document.getElementById('draft-banner').classList.remove('hidden');
+        }
+    }
+    function getSavedDraft() {
+        try { return JSON.parse(localStorage.getItem(DRAFT_KEY)); } catch { return null; }
+    }
+    function saveDraft() {
+        if (!currentBatch || currentMode !== 'new') return;
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({ batch: currentBatch, attendance, relations, newStudents }));
+    }
+    function clearDraft() {
+        localStorage.removeItem(DRAFT_KEY);
+        document.getElementById('draft-banner').classList.add('hidden');
+    }
+    async function restoreDraft() {
+        const draft = getSavedDraft();
+        if (!draft) return;
+        showMode('new');
+        document.getElementById('batch-select').value = draft.batch;
+        await handleBatchChange(draft.batch);
+        if (draft.newStudents && draft.newStudents.length > 0) {
+            draft.newStudents.forEach(s => addCardToGrid(s.name, s.relation, true));
+        }
+        Object.entries(draft.attendance).forEach(([name, status]) => {
+            attendance[name] = status;
+            const card = document.querySelector(`.student-card[data-name="${CSS.escape(name)}"]`);
+            if (card) {
+                card.classList.remove('present', 'absent');
+                card.classList.add(status ? 'present' : 'absent');
+            }
+        });
+        updateUI();
+        document.getElementById('draft-banner').classList.add('hidden');
+    }
+
+    // ── Mode ──
+    function showMode(mode) {
+        currentMode = mode;
+        document.getElementById('landing-screen').classList.add('hidden');
+        document.getElementById('app-screen').classList.remove('hidden');
+
+        if (mode === 'view') {
+            document.getElementById('history-controls').classList.remove('hidden');
+            document.getElementById('new-toolbar').classList.add('hidden');
+            document.getElementById('view-search').classList.remove('hidden');
+            document.getElementById('submit-btn').classList.add('hidden');
+            document.getElementById('filter-notice').classList.add('hidden');
+        } else {
+            document.getElementById('history-controls').classList.add('hidden');
+            document.getElementById('new-toolbar').classList.remove('hidden');
+            document.getElementById('view-search').classList.add('hidden');
+            document.getElementById('submit-btn').classList.remove('hidden');
+        }
+    }
+
+    function goBack() { location.reload(); }
+
+    // ── Filter Toggle ──
+    function setFilter(filter) {
+        activeFilter = filter;
+        document.getElementById('filter-all-btn').classList.toggle('active', filter === 'all');
+        document.getElementById('filter-all-btn').classList.toggle('all-active', filter === 'all');
+        document.getElementById('filter-mentee-btn').classList.toggle('active', filter === 'mentee');
+        document.getElementById('filter-notice').classList.toggle('hidden', filter === 'all');
+        applyFilter();
+        updateUI();
+    }
+
+    function applyFilter() {
+        document.querySelectorAll('.student-card').forEach(card => {
+            const name = card.getAttribute('data-name');
+            const isMentee = relations[name] === 'mentee';
+            if (activeFilter === 'mentee') {
+                card.classList.toggle('hidden-by-filter', !isMentee);
+            } else {
+                card.classList.remove('hidden-by-filter');
+            }
+        });
+    }
+
+    // ── Batch change ──
+    async function handleBatchChange(batch) {
+        if (!batch) return;
+        currentBatch = batch;
+        newStudents = [];
+        activeFilter = 'all';
+        document.getElementById('filter-all-btn').classList.add('active', 'all-active');
+        document.getElementById('filter-mentee-btn').classList.remove('active');
+        document.getElementById('filter-notice').classList.add('hidden');
+        document.getElementById('status-msg').innerText = "Loading students…";
+        document.getElementById('stats').classList.add('hidden');
+        document.getElementById('add-student-section').classList.add('hidden');
+
+        try {
+            const res = await fetch(`${GAS_URL}?batch=${encodeURIComponent(batch)}`);
+            const students = await res.json();
+            // students is now array of { name, relation }
+            renderGrid(students);
+            if (currentMode === 'new') {
+                document.getElementById('add-student-section').classList.remove('hidden');
+            }
+        } catch(e) {
+            document.getElementById('status-msg').innerText = "Error loading students.";
+        }
+
+        if (currentMode === 'view') {
+            try {
+                const dateRes = await fetch(`${GAS_URL}?batch=${encodeURIComponent(batch)}&action=getDates`);
+                const dates = await dateRes.json();
+                const dSelect = document.getElementById('date-select');
+                dSelect.innerHTML = '<option value="">— Select Date —</option>';
+                dates.reverse().forEach(d => { dSelect.innerHTML += `<option value="${d}">${d}</option>`; });
+            } catch(e) {}
+        }
+    }
+
+    // ── Render grid ──
+    // students: array of { name, relation } OR plain strings (backward compat)
+    function renderGrid(students) {
+        const grid = document.getElementById('student-grid');
+        grid.innerHTML = "";
+        attendance = {};
+        relations = {};
+        students.forEach((item, index) => {
+            const name = (typeof item === 'string') ? item.trim() : item.name.trim();
+            const relation = (typeof item === 'string') ? 'non-mentee' : (item.relation || 'non-mentee');
+            attendance[name] = false;
+            relations[name] = relation;
+            const card = createCard(name, index, false, relation);
+            grid.appendChild(card);
+        });
+        document.getElementById('status-msg').innerText = "";
+        document.getElementById('stats').classList.remove('hidden');
+        updateUI();
+    }
+
+    // ── Create a card element ──
+    function createCard(name, index, isNew, relation) {
+        const isMentee = relation === 'mentee';
+        let cls = 'student-card';
+        if (isNew) cls += ' is-new';
+        if (isMentee) cls += ' is-mentee';
+
+        const card = document.createElement('div');
+        card.className = cls;
+        card.setAttribute('data-name', name);
+        card.setAttribute('data-index', index);
+        card.setAttribute('data-relation', relation || 'non-mentee');
+        card.style.animationDelay = `${index * 0.025}s`;
+        card.innerHTML = `${name}<span class="status-badge"></span>`;
+        card.onclick = () => toggleCard(card, name);
+        return card;
+    }
+
+    // ── Add card to grid ──
+    function addCardToGrid(name, relation, isRestoring = false) {
+        const grid = document.getElementById('student-grid');
+        const existingCards = grid.querySelectorAll('.student-card');
+        const index = existingCards.length;
+        const rel = relation || 'non-mentee';
+        attendance[name] = true;
+        relations[name] = rel;
+        if (!isRestoring) newStudents.push({ name, relation: rel });
+        const card = createCard(name, index, true, rel);
+        card.classList.add('present');
+        // Apply current filter immediately
+        if (activeFilter === 'mentee' && rel !== 'mentee') {
+            card.classList.add('hidden-by-filter');
+        }
+        grid.appendChild(card);
+        updateUI();
+        saveDraft();
+    }
+
+    // ── Add New Student (called from UI) ──
+    async function addNewStudent() {
+        const input = document.getElementById('new-student-name');
+        const relationEl = document.getElementById('new-student-relation');
+        const btn = document.getElementById('add-student-btn');
+        const name = input.value.trim();
+        const relation = relationEl.value;
+
+        if (!name) { showAddMsg("Please enter a name.", "var(--absent)"); return; }
+        if (!currentBatch) { showAddMsg("Select a batch first.", "var(--absent)"); return; }
+
+        const existing = Object.keys(attendance).map(n => n.toLowerCase());
+        if (existing.includes(name.toLowerCase())) {
+            showAddMsg("This student is already in the list.", "var(--absent)");
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = "Adding…";
+        showAddMsg("", "");
+
+        try {
+            await fetch(GAS_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "addStudent", batch: currentBatch, name, relation })
+            });
+            addCardToGrid(name, relation);
+            input.value = "";
+            const label = relation === 'mentee' ? 'Mentee' : 'Non-Mentee';
+            showAddMsg(`✓ "${name}" added as ${label} and marked Present.`, "var(--present)");
+        } catch(e) {
+            addCardToGrid(name, relation);
+            input.value = "";
+            const label = relation === 'mentee' ? 'Mentee' : 'Non-Mentee';
+            showAddMsg(`✓ "${name}" added as ${label} (verify in sheet).`, "var(--present)");
+        }
+
+        btn.disabled = false;
+        btn.innerText = "+ Add";
+    }
+
+    function showAddMsg(msg, color) {
+        const el = document.getElementById('add-student-msg');
+        el.innerText = msg;
+        el.style.color = color;
+    }
+
+    // ── Toggle ──
+    function toggleCard(card, name) {
+        if (currentMode === 'view') return; // Exit early if in view-only mode
+    
+        attendance[name] = !attendance[name];
+        card.classList.toggle('present', attendance[name]);
+        card.classList.toggle('absent', !attendance[name]);
+        updateUI();
+        saveDraft();
+    }
+    // ── Mark All (respects active filter — only marks visible cards) ──
+    function markAll(isPresent) {
+        document.querySelectorAll('.student-card:not(.hidden-by-filter)').forEach(card => {
+            const name = card.getAttribute('data-name');
+            attendance[name] = isPresent;
+            card.classList.toggle('present', isPresent);
+            card.classList.toggle('absent', !isPresent);
+        });
+        updateUI();
+        saveDraft();
+    }
+
+    // ── Search ──
+    function filterStudents(query) {
+        const q = query.trim().toLowerCase();
+        document.querySelectorAll('.student-card').forEach(card => {
+            const name = card.getAttribute('data-name').toLowerCase();
+            const hiddenBySearch = q.length > 0 && !name.includes(q);
+            card.classList.toggle('hidden-by-search', hiddenBySearch);
+        });
+    }
+
+    // ── Stats (counts only visible cards) ──
+    function updateUI() {
+        let total = 0, present = 0;
+        document.querySelectorAll('.student-card:not(.hidden-by-filter)').forEach(card => {
+            const name = card.getAttribute('data-name');
+            total++;
+            if (attendance[name]) present++;
+        });
+        document.getElementById('t-count').innerText = total;
+        document.getElementById('p-count').innerText = present;
+        document.getElementById('a-count').innerText = total - present;
+    }
+
+    // ── History ──
+    async function loadHistory() {
+        const date = document.getElementById('date-select').value;
+        if (!date) return alert("Please select a date.");
+        document.getElementById('status-msg').innerText = "Loading records…";
+        try {
+            const res = await fetch(`${GAS_URL}?batch=${encodeURIComponent(currentBatch)}&action=viewAttendance&date=${encodeURIComponent(date)}`);
+            const statusList = await res.json();
+            document.querySelectorAll('.student-card').forEach(card => {
+                const idx = parseInt(card.getAttribute('data-index'));
+                const name = card.getAttribute('data-name');
+                const rawStatus = (statusList[idx] || "").toString().trim().toUpperCase();
+                const isP = rawStatus === "P" || rawStatus === "PRESENT";
+                card.classList.remove('present', 'absent');
+                card.classList.add(isP ? 'present' : 'absent');
+                attendance[name] = isP;
+            });
+            updateUI();
+            document.getElementById('status-msg').innerText = "";
+        } catch(e) {
+            document.getElementById('status-msg').innerText = "Error loading records.";
+        }
+    }
+
+    // ── Confirm Modal ──
+    function openConfirmModal() {
+        if (!currentBatch) return alert("Select a batch first.");
+        const visibleCards = document.querySelectorAll('.student-card:not(.hidden-by-filter)');
+        let present = 0, total = visibleCards.length;
+        visibleCards.forEach(card => { if (attendance[card.getAttribute('data-name')]) present++; });
+
+        const today = new Date().toLocaleDateString('en-IN', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
+
+        document.getElementById('m-batch').innerText = currentBatch;
+        document.getElementById('m-date').innerText = today;
+        document.getElementById('m-present').innerText = present;
+        document.getElementById('m-absent').innerText = total - present;
+
+        // Show scope if mentee filter is active
+        const scopeRow = document.getElementById('m-scope-row');
+        if (activeFilter === 'mentee') {
+            document.getElementById('m-scope').innerText = 'Mentees only';
+            scopeRow.classList.remove('hidden');
+        } else {
+            scopeRow.classList.add('hidden');
+        }
+
+        const newRow = document.getElementById('m-new-row');
+        if (newStudents.length > 0) {
+            document.getElementById('m-new').innerText = newStudents.length;
+            newRow.classList.remove('hidden');
+        } else {
+            newRow.classList.add('hidden');
+        }
+
+        document.getElementById('confirm-modal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+        document.getElementById('confirm-modal').classList.add('hidden');
+    }
+
+    // ── Submit ──
+    // Only submits visible (non-filtered-out) students when mentee filter is active
+    async function confirmSubmit() {
+        closeModal();
+        const btn = document.getElementById('submit-btn');
+        btn.disabled = true;
+        btn.innerText = "Saving…";
+
+        // Only include cards that are currently visible (not hidden by filter)
+        const list = [];
+        document.querySelectorAll('.student-card:not(.hidden-by-filter)').forEach(card => {
+            const name = card.getAttribute('data-name');
+            list.push({ name, status: attendance[name] ? "Present" : "Absent" });
+        });
+
+        try {
+            await fetch(GAS_URL, {
+                method: "POST",
+                body: JSON.stringify({ batch: currentBatch, attendance: list })
+            });
+            btn.innerText = "✓ Saved Successfully";
+            btn.classList.add('success');
+            clearDraft();
+            newStudents = [];
+        } catch(e) {
+            btn.innerText = "✓ Saved (Check Sheet)";
+            btn.classList.add('success');
+            clearDraft();
+            newStudents = [];
+        }
+
+        setTimeout(() => {
+            btn.innerText = "Submit Attendance";
+            btn.classList.remove('success');
+            btn.disabled = false;
+        }, 4000);
+    }
+
+    document.getElementById('confirm-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+</script>
+</body>
+</html>
